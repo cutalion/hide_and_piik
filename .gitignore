@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+
+# Intermediate files (optional, but usually we don't want to commit data)
+analysis.json
+pii_config.json
+clean.json
