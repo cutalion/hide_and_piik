@@ -53,6 +53,7 @@ def main():
         print(f"Error reading file: {e}")
         sys.exit(1)
 
+def analyze_data(data):
     stats = traverse(data)
     
     # Convert sets to lists for JSON serialization and limit samples
@@ -64,7 +65,23 @@ def main():
             "path": path,
             "samples": sorted_samples
         })
+    return output
 
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: python analyze.py <input_file.json>")
+        sys.exit(1)
+
+    input_file = sys.argv[1]
+    
+    try:
+        with open(input_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        sys.exit(1)
+
+    output = analyze_data(data)
     print(json.dumps(output, indent=2, ensure_ascii=False))
 
 if __name__ == "__main__":

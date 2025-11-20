@@ -60,7 +60,7 @@ If a path does not contain PII (e.g., boolean flags, internal IDs, timestamps, t
         content = response.choices[0].message.content
         return json.loads(content)
     except Exception as e:
-        print(f"Error calling LLM: {e}")
+        print(f"Error calling LLM: {e}", file=sys.stderr)
         sys.exit(1)
 
 def main():

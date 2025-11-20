@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import os
+import sys
+
+# Ensure we can import modules from the same directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, current_dir)
+
+from analyze import analyze_data
+from classify import get_pii_config
+from redact import traverse_and_redact
+
+def confirm_action(prompt):
+    """Ask user for confirmation."""
+    while True:
+        response = input(f"{prompt} [y/N] ").lower()
+        if response == 'y':
+            return True
+        if response == 'n' or response == '':
+            return False
+
+def cmd_analyze(args):
+    try:
+        with open(args.input, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error reading input file: {e}", file=sys.stderr)
+        sys.exit(1)
+    
+    output = analyze_data(data)
+    print(json.dumps(output, indent=2, ensure_ascii=False))
+
+def cmd_classify(args):
+    if os.path.exists(args.output) and not args.force:
+        if not confirm_action(f"File '{args.output}' already exists. Overwrite?"):
+            print("Aborted.", file=sys.stderr)
+            sys.exit(0)
+
+    try:
+        with open(args.input, 'r', encoding='utf-8') as f:
+            analysis_data = json.load(f)
+    except Exception as e:
+        print(f"Error reading analysis file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    api_key = os.environ.get("LLM_API_KEY")
+    if not api_key:
+        print("Error: LLM_API_KEY environment variable is not set.", file=sys.stderr)
+        sys.exit(1)
+    
+    base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
+    model = os.environ.get("LLM_MODEL", "gpt-4o")
+
+    print(f"Calling LLM ({model})...", file=sys.stderr)
+    config = get_pii_config(analysis_data, api_key, base_url, model)
+
+    try:
+        with open(args.output, 'w', encoding='utf-8') as f:
+            json.dump(config, f, indent=2, ensure_ascii=False)
+        print(f"Config saved to {args.output}", file=sys.stderr)
+    except Exception as e:
+        print(f"Error writing config file: {e}", file=sys.stderr)
+        sys.exit(1)
+
+def cmd_redact(args):
+    try:
+        with open(args.input, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        with open(args.config, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+    except Exception as e:
+        print(f"Error reading files: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    redacted = traverse_and_redact(data, config)
+    print(json.dumps(redacted, indent=2, ensure_ascii=False))
+
+def cmd_clean(args):
+    # 1. Analyze
+    try:
+        with open(args.input, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+    except Exception as e:
+        print(f"Error reading input file: {e}", file=sys.stderr)
+        sys.exit(1)
+    
+    analysis_data = analyze_data(data)
+
+    if args.save_intermediates:
+        analysis_file = "analysis.json"
+        if os.path.exists(analysis_file) and not args.force:
+            if not confirm_action(f"File '{analysis_file}' already exists. Overwrite?"):
+                print("Aborted.", file=sys.stderr)
+                sys.exit(0)
+        try:
+            with open(analysis_file, 'w', encoding='utf-8') as f:
+                json.dump(analysis_data, f, indent=2, ensure_ascii=False)
+            print(f"Saved analysis to {analysis_file}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error writing analysis file: {e}", file=sys.stderr)
+
+    # 2. Classify
+    api_key = os.environ.get("LLM_API_KEY")
+    if not api_key:
+        print("Error: LLM_API_KEY environment variable is not set.", file=sys.stderr)
+        sys.exit(1)
+    
+    base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
+    model = os.environ.get("LLM_MODEL", "gpt-4o")
+
+    config = get_pii_config(analysis_data, api_key, base_url, model)
+
+    if args.save_intermediates:
+        config_file = "pii_config.json"
+        if os.path.exists(config_file) and not args.force:
+            if not confirm_action(f"File '{config_file}' already exists. Overwrite?"):
+                print("Aborted.", file=sys.stderr)
+                sys.exit(0)
+        try:
+            with open(config_file, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2, ensure_ascii=False)
+            print(f"Saved config to {config_file}", file=sys.stderr)
+        except Exception as e:
+            print(f"Error writing config file: {e}", file=sys.stderr)
+
+    # 3. Redact
+    redacted = traverse_and_redact(data, config)
+    print(json.dumps(redacted, indent=2, ensure_ascii=False))
+
+
+def main():
+    parser = argparse.ArgumentParser(description="PII Redactor Tool")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Analyze
+    p_analyze = subparsers.add_parser("analyze", help="Extract paths and masked samples")
+    p_analyze.add_argument("input", help="Input JSON file")
+    p_analyze.set_defaults(func=cmd_analyze)
+
+    # Classify
+    p_classify = subparsers.add_parser("classify", help="Generate PII config using LLM")
+    p_classify.add_argument("input", help="Analysis JSON file")
+    p_classify.add_argument("output", help="Output config JSON file")
+    p_classify.add_argument("-f", "--force", action="store_true", help="Force overwrite")
+    p_classify.set_defaults(func=cmd_classify)
+
+    # Redact
+    p_redact = subparsers.add_parser("redact", help="Redact PII based on config")
+    p_redact.add_argument("input", help="Input JSON file")
+    p_redact.add_argument("config", help="PII Config JSON file")
+    p_redact.set_defaults(func=cmd_redact)
+
+    # Clean (All-in-one)
+    p_clean = subparsers.add_parser("clean", help="Analyze, Classify, and Redact in one go")
+    p_clean.add_argument("input", help="Input JSON file")
+    p_clean.add_argument("--save-intermediates", action="store_true", help="Save analysis.json and pii_config.json")
+    p_clean.add_argument("-f", "--force", action="store_true", help="Force overwrite intermediate files")
+    p_clean.set_defaults(func=cmd_clean)
+
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()
