@@ -1,0 +1,74 @@
+[
+  {
+    "path": "sources.person_founder_for.data.items[].full_name",
+    "samples": [
+      "LLLLLL LLLL",
+      "LLLLLL LLLL LLLLLLLL"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].organizations[].inn",
+    "samples": [
+      "DDDDDDDDDD",
+      "DDDDDDDDDDDD"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].organizations[].name",
+    "samples": [
+      "LL LLLLLL",
+      "LLL LLLLLLL"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].organizations[].kpp",
+    "samples": [
+      "<class 'NoneType'>",
+      "DDDDDDDDD"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].email",
+    "samples": [
+      "LLLL.LLLLLL@LLLL.LL",
+      "LLLLLL@LLLLLLL.LLL"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].phone",
+    "samples": [
+      "+D (DDD) DDD-DD-DD",
+      "DDDDDDDDDDD"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].passport.series",
+    "samples": [
+      "DDDD"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].passport.number",
+    "samples": [
+      "DDDDDD"
+    ]
+  },
+  {
+    "path": "sources.person_founder_for.data.items[].passport.date_issued",
+    "samples": [
+      "DD.DD.DDDD"
+    ]
+  },
+  {
+    "path": "meta.generated_at",
+    "samples": [
+      "DDDD-DD-DDLDD:DD:DDL"
+    ]
+  },
+  {
+    "path": "meta.version",
+    "samples": [
+      "D"
+    ]
+  }
+]

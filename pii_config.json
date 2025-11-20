@@ -1,0 +1,10 @@
+{
+  "sources.person_founder_for.data.items[].full_name": "FULL_NAME",
+  "sources.person_founder_for.data.items[].organizations[].inn": "INN",
+  "sources.person_founder_for.data.items[].organizations[].kpp": "KPP",
+  "sources.person_founder_for.data.items[].email": "EMAIL",
+  "sources.person_founder_for.data.items[].phone": "PHONE",
+  "sources.person_founder_for.data.items[].passport.series": "PASSPORT_SERIES",
+  "sources.person_founder_for.data.items[].passport.number": "PASSPORT_NUMBER",
+  "sources.person_founder_for.data.items[].passport.date_issued": "DATE_OF_ISSUE"
+}

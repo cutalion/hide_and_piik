@@ -1,0 +1,48 @@
+{
+  "sources": {
+    "person_founder_for": {
+      "data": {
+        "items": [
+          {
+            "full_name": "Иванов Иван Иванович",
+            "organizations": [
+              {
+                "inn": "7736207543",
+                "name": "ООО Ромашка",
+                "kpp": "773601001"
+              }
+            ],
+            "email": "ivanov@example.com",
+            "phone": "+7 (999) 123-45-67",
+            "passport": {
+              "series": "4500",
+              "number": "123456",
+              "date_issued": "12.05.2010"
+            }
+          },
+          {
+            "full_name": "Петров Петр",
+            "organizations": [
+              {
+                "inn": "500100732259",
+                "name": "ИП Петров",
+                "kpp": null
+              }
+            ],
+            "email": "petr.petrov@mail.ru",
+            "phone": "89031234567",
+            "passport": {
+              "series": "4600",
+              "number": "654321",
+              "date_issued": "01.01.2020"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "meta": {
+    "generated_at": "2023-10-27T10:00:00Z",
+    "version": 1
+  }
+}
