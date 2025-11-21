@@ -29,7 +29,7 @@
                 "kpp": null
               }
             ],
-            "email": "petr.petrov@mail.ru",
+            "email": "petr.petrov@example.com",
             "phone": "89031234567",
             "passport": {
               "series": "4600",
@@ -48,6 +48,10 @@
     {
       "author": "John Doe",
       "email": "john.doe@example.com"
+    },
+    {
+      "author": "Петр Петров",
+      "email": "petr.petrov@example.com"
     }
   ],
   "meta": {

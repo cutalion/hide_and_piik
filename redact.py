@@ -1,16 +1,42 @@
 import json
 import sys
 
-def traverse_and_redact(data, config, path=""):
+
+def _get_placeholder(label, original_value, cache, counters):
+    """Return a deterministic placeholder for a unique (label, value) pair."""
+    label_cache = cache.setdefault(label, {})
+    if isinstance(original_value, (dict, list)):
+        normalized_value = json.dumps(original_value, sort_keys=True, ensure_ascii=False)
+    else:
+        normalized_value = original_value
+
+    if normalized_value in label_cache:
+        return label_cache[normalized_value]
+
+    counters[label] = counters.get(label, 0) + 1
+    placeholder = f"<{label}:{counters[label]}>"
+    label_cache[normalized_value] = placeholder
+    return placeholder
+
+
+def traverse_and_redact(data, config, path="", cache=None, counters=None):
+    if cache is None:
+        cache = {}
+    if counters is None:
+        counters = {}
+
     if isinstance(data, dict):
         for k, v in data.items():
             new_path = f"{path}.{k}" if path else k
             
             # Check if this path is in config
             if new_path in config:
-                data[k] = f"<{config[new_path]}>"
+                if v is None:
+                    continue
+                label = config[new_path]
+                data[k] = _get_placeholder(label, v, cache, counters)
             else:
-                traverse_and_redact(v, config, new_path)
+                traverse_and_redact(v, config, new_path, cache, counters)
                 
     elif isinstance(data, list):
         new_path = f"{path}[]"
@@ -30,10 +56,13 @@ def traverse_and_redact(data, config, path=""):
             # So if "items[]" is in config, it means "redact every item in this list".
             
             if new_path in config:
-                data[i] = f"<{config[new_path]}>"
+                if item is None:
+                    continue
+                label = config[new_path]
+                data[i] = _get_placeholder(label, item, cache, counters)
             else:
                 if isinstance(item, (dict, list)):
-                    traverse_and_redact(item, config, new_path)
+                    traverse_and_redact(item, config, new_path, cache, counters)
                 # If it's a primitive and not in config, we leave it.
                 # Note: The analyzer produces paths like "a.b[]" for primitives in a list.
                 # If the config says "a.b[]": "PHONE", we should redact it.
@@ -44,11 +73,6 @@ def traverse_and_redact(data, config, path=""):
                 # if item is primitive, it goes to 'else' block and records path "a.b[]".
                 # So yes, if we have ["123", "456"], path is "list[]".
                 
-                # So here in redact, if we have a list of primitives:
-                if not isinstance(item, (dict, list)):
-                     if new_path in config:
-                         data[i] = f"<{config[new_path]}>"
-
     return data
 
 def main():
