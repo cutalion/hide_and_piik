@@ -59,7 +59,7 @@ Return ONLY a valid JSON object (no markdown formatting, no explanations).
 The keys must be the exact paths from the input that contain PII.
 The values must be the specific PII type (uppercase string).
 
-Common PII Types to detect:
+Common PII Types to detect (applies to both individuals and organizations):
 - FULL_NAME (e.g., "LLLLL LLL L.")
 - EMAIL
 - PHONE
@@ -69,6 +69,10 @@ Common PII Types to detect:
 - ADDRESS
 - CREDIT_CARD
 - IP_ADDRESS
+
+If you see nested organization objects (e.g., founderFor.organization.inn/kpp/ogrn),
+those registration numbers MUST be redacted too—treat them exactly like the person-level
+identifiers above.
 
 You may invent new PII types if none of the above fit (e.g. DRIVER_LICENSE, SOCIAL_MEDIA_HANDLE), but prefer standard ones if possible.
 
