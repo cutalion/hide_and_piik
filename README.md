@@ -31,6 +31,7 @@ export LLM_API_KEY="your-api-key"
 # Optional:
 # export LLM_BASE_URL="https://api.openai.com/v1"
 # export LLM_MODEL="gpt-4o"
+# (gpt-5* models are supported automatically via the Responses API)
 
 python3 pii_redactor/classify.py analysis.json pii_config.json
 ```

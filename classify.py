@@ -1,7 +1,41 @@
 import json
 import os
 import sys
-from openai import OpenAI
+from openai import BadRequestError, OpenAI
+from pydantic import BaseModel, Field
+
+def _extract_responses_text(response):
+    """Turn a Responses API response into plain text content."""
+    try:
+        return response.output[0].content[0].text
+    except Exception:
+        pass
+    if hasattr(response, "output_text"):
+        return response.output_text
+    raise RuntimeError("Unexpected responses payload; cannot parse text.")
+
+CHAT_TEMPERATURE = 1.0
+
+
+class PIIConfigModel(BaseModel):
+    __root__: dict[str, str] = Field(
+        default_factory=dict,
+        description="Mapping between JSON paths and uppercase PII labels.",
+    )
+
+    class Config:
+        schema_extra = {
+            "type": "object",
+            "properties": {},
+            "additionalProperties": {
+                "type": "string",
+                "description": "Uppercase PII label such as FULL_NAME or EMAIL.",
+            },
+        }
+
+    def to_dict(self):
+        return self.__root__
+
 
 def get_pii_config(analysis_data, api_key, base_url, model):
     client = OpenAI(
@@ -46,19 +80,44 @@ If a path does not contain PII (e.g., boolean flags, internal IDs, timestamps, t
 {json.dumps(analysis_data, indent=2, ensure_ascii=False)}
 """
 
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    use_responses_api = model.startswith("gpt-5")
+
     try:
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.1
-        )
-        
-        content = response.choices[0].message.content
-        return json.loads(content)
+        if use_responses_api:
+            try:
+                response = client.responses.parse(
+                    model=model,
+                    input=messages,
+                    text_format=PIIConfigModel,
+                )
+                parsed = response.output_parsed
+                if parsed is not None:
+                    return parsed.to_dict()
+                content = _extract_responses_text(response)
+                return json.loads(content)
+            except BadRequestError as err:
+                if "Unsupported response_format type" not in str(err):
+                    raise
+                response = client.responses.create(
+                    model=model,
+                    input=messages,
+                )
+                content = _extract_responses_text(response)
+                return json.loads(content)
+        else:
+            response = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                response_format={"type": "json_object"},
+                temperature=CHAT_TEMPERATURE
+            )
+            content = response.choices[0].message.content
+            return json.loads(content)
     except Exception as e:
         print(f"Error calling LLM: {e}", file=sys.stderr)
         sys.exit(1)
