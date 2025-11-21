@@ -52,9 +52,10 @@ def cmd_classify(args):
     
     base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
     model = os.environ.get("LLM_MODEL", "gpt-4o")
+    reasoning_effort = os.environ.get("LLM_REASONING_EFFORT", "low")
 
     print(f"Calling LLM ({model})...", file=sys.stderr)
-    config = get_pii_config(analysis_data, api_key, base_url, model)
+    config = get_pii_config(analysis_data, api_key, base_url, model, reasoning_effort)
 
     try:
         with open(args.output, 'w', encoding='utf-8') as f:
@@ -109,8 +110,9 @@ def cmd_clean(args):
     
     base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
     model = os.environ.get("LLM_MODEL", "gpt-4o")
+    reasoning_effort = os.environ.get("LLM_REASONING_EFFORT", "low")
 
-    config = get_pii_config(analysis_data, api_key, base_url, model)
+    config = get_pii_config(analysis_data, api_key, base_url, model, reasoning_effort)
 
     if args.save_intermediates:
         config_file = "pii_config.json"
@@ -145,6 +147,7 @@ Env:
   LLM_API_KEY (required for classify/clean)
   LLM_BASE_URL (default: https://api.openai.com/v1)
   LLM_MODEL (default: gpt-4o)
+  LLM_REASONING_EFFORT (default: low; used for gpt-5* reasoning)
 """
 
     parser = argparse.ArgumentParser(

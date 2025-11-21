@@ -37,7 +37,7 @@ class PIIConfigModel(BaseModel):
         return self.__root__
 
 
-def get_pii_config(analysis_data, api_key, base_url, model):
+def get_pii_config(analysis_data, api_key, base_url, model, reasoning_effort="low"):
     client = OpenAI(
         api_key=api_key,
         base_url=base_url
@@ -86,6 +86,8 @@ If a path does not contain PII (e.g., boolean flags, internal IDs, timestamps, t
     ]
 
     use_responses_api = model.startswith("gpt-5")
+    reasoning_effort = (reasoning_effort or "").strip()
+    reasoning_params = {"effort": reasoning_effort} if reasoning_effort else None
 
     try:
         if use_responses_api:
@@ -94,6 +96,7 @@ If a path does not contain PII (e.g., boolean flags, internal IDs, timestamps, t
                     model=model,
                     input=messages,
                     text_format=PIIConfigModel,
+                    reasoning=reasoning_params,
                 )
                 parsed = response.output_parsed
                 if parsed is not None:
@@ -106,6 +109,7 @@ If a path does not contain PII (e.g., boolean flags, internal IDs, timestamps, t
                 response = client.responses.create(
                     model=model,
                     input=messages,
+                    reasoning=reasoning_params,
                 )
                 content = _extract_responses_text(response)
                 return json.loads(content)
@@ -129,6 +133,7 @@ def main():
         print("  LLM_API_KEY")
         print("  LLM_BASE_URL (optional, default: https://api.openai.com/v1)")
         print("  LLM_MODEL (optional, default: gpt-4o)")
+        print("  LLM_REASONING_EFFORT (optional, default: low; applies to gpt-5*)")
         sys.exit(1)
 
     input_file = sys.argv[1]
@@ -141,6 +146,7 @@ def main():
     
     base_url = os.environ.get("LLM_BASE_URL", "https://api.openai.com/v1")
     model = os.environ.get("LLM_MODEL", "gpt-5-codex")
+    reasoning_effort = os.environ.get("LLM_REASONING_EFFORT", "low")
 
     print(f"Reading analysis from {input_file}...")
     try:
@@ -151,7 +157,7 @@ def main():
         sys.exit(1)
 
     print(f"Calling LLM ({model}) to classify PII...")
-    pii_config = get_pii_config(analysis_data, api_key, base_url, model)
+    pii_config = get_pii_config(analysis_data, api_key, base_url, model, reasoning_effort)
 
     print(f"Saving config to {output_file}...")
     try:
