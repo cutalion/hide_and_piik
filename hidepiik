@@ -131,7 +131,27 @@ def cmd_clean(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="PII Redactor Tool")
+    epilog = """Examples:
+  hidepiik analyze input.json > analysis.json
+  hidepiik classify analysis.json pii_config.json -f
+  hidepiik redact input.json pii_config.json > clean.json
+  hidepiik clean input.json --save-intermediates -f
+
+Common flags:
+  classify: -f/--force (overwrite output)
+  clean: --save-intermediates, -f/--force
+
+Env:
+  LLM_API_KEY (required for classify/clean)
+  LLM_BASE_URL (default: https://api.openai.com/v1)
+  LLM_MODEL (default: gpt-4o)
+"""
+
+    parser = argparse.ArgumentParser(
+        description="PII Redactor Tool",
+        formatter_class=argparse.RawTextHelpFormatter,
+        epilog=epilog
+    )
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # Analyze
