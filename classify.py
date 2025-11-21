@@ -1,7 +1,7 @@
 import json
 import os
 import sys
-from openai import BadRequestError, OpenAI
+from openai import OpenAI
 from pydantic import BaseModel, Field
 
 def _extract_responses_text(response):
@@ -91,28 +91,17 @@ If a path does not contain PII (e.g., boolean flags, internal IDs, timestamps, t
 
     try:
         if use_responses_api:
-            try:
-                response = client.responses.parse(
-                    model=model,
-                    input=messages,
-                    text_format=PIIConfigModel,
-                    reasoning=reasoning_params,
-                )
-                parsed = response.output_parsed
-                if parsed is not None:
-                    return parsed.to_dict()
-                content = _extract_responses_text(response)
-                return json.loads(content)
-            except BadRequestError as err:
-                if "Unsupported response_format type" not in str(err):
-                    raise
-                response = client.responses.create(
-                    model=model,
-                    input=messages,
-                    reasoning=reasoning_params,
-                )
-                content = _extract_responses_text(response)
-                return json.loads(content)
+            response = client.responses.parse(
+                model=model,
+                input=messages,
+                text_format=PIIConfigModel,
+                reasoning=reasoning_params,
+            )
+            parsed = response.output_parsed
+            if parsed is not None:
+                return parsed.to_dict()
+            content = _extract_responses_text(response)
+            return json.loads(content)
         else:
             response = client.chat.completions.create(
                 model=model,
