@@ -29,7 +29,10 @@ def traverse(data, path="", paths_stats=None):
         for item in data:
             traverse(item, new_path, paths_stats)
     else:
-        # Leaf node
+        # Leaf node - skip null values
+        if data is None:
+            return paths_stats
+        
         if path not in paths_stats:
             paths_stats[path] = set()
         
@@ -39,28 +42,14 @@ def traverse(data, path="", paths_stats=None):
 
     return paths_stats
 
-def main():
-    if len(sys.argv) < 2:
-        print("Usage: python analyze.py <input_file.json>")
-        sys.exit(1)
-
-    input_file = sys.argv[1]
-    
-    try:
-        with open(input_file, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-    except Exception as e:
-        print(f"Error reading file: {e}")
-        sys.exit(1)
-
 def analyze_data(data):
     stats = traverse(data)
     
     # Convert sets to lists for JSON serialization and limit samples
     output = []
     for path, samples in stats.items():
-        # Sort to make deterministic, take top 5 unique samples
-        sorted_samples = sorted(list(samples))[:5]
+        # Sort to make deterministic, take top 1 unique samples
+        sorted_samples = sorted(list(samples))[:1]
         output.append({
             "path": path,
             "samples": sorted_samples

@@ -41,6 +41,15 @@
       }
     }
   },
+  "authors": [
+    {
+      "author": null
+    },
+    {
+      "author": "John Doe",
+      "email": "john.doe@example.com"
+    }
+  ],
   "meta": {
     "generated_at": "2023-10-27T10:00:00Z",
     "version": 1
